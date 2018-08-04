@@ -1,0 +1,29 @@
+---
+- name: Create target directory
+  file: path={{ ansible_env.HOME }}/barbican state=directory mode=0755
+
+- name: Copy docker-compose file to remote
+  template:
+    src: docker-compose.yaml.j2
+    dest: "{{ ansible_env.HOME }}/barbican/docker-compose.yaml"
+
+- name: Clear the resources first
+  docker_service:
+    project_src: "{{ ansible_env.HOME }}/barbican/"
+    state: absent
+    remove_volumes: yes
+    remove_orphans: yes
+
+- name: Run docker-compose up
+  docker_service:
+    project_src: "{{ ansible_env.HOME }}/barbican/"
+
+- name: Initialize barbican database
+  shell: docker-compose exec -T barbican sh -c 'barbican-manage db upgrade'
+  args:
+    chdir: "{{ ansible_env.HOME }}/barbican/"
+
+- name: Restart barbican service
+  shell: docker-compose restart barbican
+  args:
+    chdir: "{{ ansible_env.HOME }}/barbican/"

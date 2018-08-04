@@ -1,0 +1,16 @@
+[DEFAULT]
+db_auto_create = True
+sql_connection = mysql+pymysql://{{ mysql_user }}:{{ mysql_password }}@{{ mysql_host }}/barbican?charset=utf8
+use_stderr = True
+log_file = /var/log/barbican/barbican.log
+host_href = http://barbican/key-manager
+debug = {{ barbican_debug_enabled }}
+
+[secretstore]
+namespace=barbican.secretstore.plugin
+enable_multiple_secret_stores=false
+enabled_secretstore_plugins={{ barbican_backend }}
+
+[crypto]
+namespace=barbican.crypto.plugin
+enabled_crypto_plugins=simple_crypto

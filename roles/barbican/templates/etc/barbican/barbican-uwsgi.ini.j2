@@ -1,0 +1,14 @@
+[uwsgi]
+http-socket = :9311
+lazy-apps = true
+add-header = Connection: close
+buffer-size = 65535
+hook-master-start = unix_signal:15 gracefully_kill_them_all
+thunder-lock = true
+plugins = python
+enable-threads = true
+exit-on-reload = false
+die-on-term = true
+master = true
+processes = 2
+wsgi-file = /usr/local/bin/barbican-wsgi-api

@@ -1,0 +1,9 @@
+barbican_api_pipeline: "barbican_api"
+barbican_service_image: "lingxiankong/barbican:0.0.1"
+barbican_service_port: 9311
+barbican_backend: "store_crypto"
+barbican_debug_enabled: True
+
+mysql_host: "mysql"
+mysql_user: "root"
+mysql_password: "password"

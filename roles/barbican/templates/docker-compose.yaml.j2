@@ -1,0 +1,19 @@
+version: '3'
+services:
+  barbican:
+    image: {{ barbican_service_image }}
+    ports:
+      - "{{ barbican_service_port }}:9311"
+    volumes:
+      - /etc/barbican/:/etc/barbican/
+      - /var/log/barbican/:/var/log/barbican/
+    depends_on:
+      - mysql
+
+  mysql:
+    image: mysql:5.7
+    expose:
+      - "3306"
+    environment:
+      MYSQL_ROOT_PASSWORD: {{ mysql_password }}
+      MYSQL_DATABASE: barbican

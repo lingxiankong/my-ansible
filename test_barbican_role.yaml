@@ -1,0 +1,6 @@
+---
+- name: Install barbican on docker-engine host
+  hosts: localhost
+
+  roles:
+    - barbican
