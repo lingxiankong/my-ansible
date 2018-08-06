@@ -4,8 +4,7 @@
   with_items:
     - "{{ ansible_env.HOME }}/barbican"
     - /var/log/barbican
-    - /var/lib/vault1/config
-    - /var/lib/vault2/config
+    - /var/lib/vault/config
 
 - name: Copy docker-compose file to remote
   template:
@@ -14,7 +13,6 @@
 
 - name: Copy barbican config files to remote
   template:
-    backup: yes
     src: etc/barbican/{{ item }}.j2
     dest: /etc/barbican/{{ item }}
   with_items:
@@ -24,30 +22,27 @@
 
 - name: Copy vault config files to remote
   template:
-    backup: yes
-    src: var/lib/{{ item }}.j2
-    dest: /var/lib/{{ item }}
-  with_items:
-    - vault1/config/config.hcl
-    - vault2/config/config.hcl
+    src: var/lib/vault/config/config.hcl.j2
+    dest: /var/lib/vault/config/config.hcl
   when: barbican_backend == 'vault_plugin'
-
-# TODO(lingxian): Need to consider the upgrade scenario. Vault service doesn't need to be removed.
-- name: Clear the resources first
-  docker_service:
-    project_src: "{{ ansible_env.HOME }}/barbican/"
-    state: absent
-    remove_volumes: yes
-    remove_orphans: yes
 
 - name: Run docker-compose up
   docker_service:
     project_src: "{{ ansible_env.HOME }}/barbican/"
 
+# Before this task, all the containers should be running.
 - name: Wait for vault unseal and config vault token in barbican config file manually
   local_action: pause
   when: barbican_backend == 'vault_plugin'
   run_once: true
+
+- name: Add barbican-api to haproxy
+  debug: msg="TBD"
+  when: haproxy_address is defined
+
+- name: Add vault to haproxy
+  debug: msg="TBD"
+  when: haproxy_address is defined
 
 - name: Initialize barbican database
   shell: docker-compose exec -T barbican sh -c 'barbican-manage db upgrade'

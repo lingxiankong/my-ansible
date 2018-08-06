@@ -13,8 +13,7 @@ services:
       - mysql
     {% endif %}
     {% if barbican_backend == "vault_plugin" %}
-      - vault-server-1
-      - vault-server-2
+      - vault-server
     {% endif %}
 
 {% if barbican_deploy_mysql %}
@@ -28,40 +27,26 @@ services:
 {% endif %}
 
 {% if barbican_backend == "vault_plugin" %}
-  vault-server-1:
+  vault-server:
     image: vault:0.10.4
     command: server
-    expose:
-      - "8200"
-      - "8201"
+    ports:
+      - "8200:8200"
+      - "8201:8201"
     volumes:
-      - /var/lib/vault1/:/vault/:rw
+      - /var/lib/vault/:/vault/:rw
     cap_add:
       - IPC_LOCK
     labels:
       release: "0.10.4"
+    {% if barbican_deploy_etcd %}
     depends_on:
       - etcd0
       - etcd1
       - etcd2
+    {% endif %}
 
-  vault-server-2:
-    image: vault:0.10.4
-    command: server
-    expose:
-      - "8200"
-      - "8201"
-    volumes:
-      - /var/lib/vault2/:/vault/:rw
-    cap_add:
-      - IPC_LOCK
-    labels:
-      release: "0.10.4"
-    depends_on:
-      - etcd0
-      - etcd1
-      - etcd2
-
+  {% if barbican_deploy_etcd %}
   etcd0:
     image: quay.io/coreos/etcd:v3.2.24
     expose:
@@ -136,4 +121,5 @@ volumes:
   etcd0:
   etcd1:
   etcd2:
+  {% endif %}
 {% endif %}

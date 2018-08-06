@@ -2,10 +2,16 @@ barbican_api_pipeline: "barbican_api"
 barbican_service_image: "lingxiankong/barbican:0.0.1"
 barbican_service_port: 9311
 barbican_public_url: "http://127.0.0.1:9311"
-barbican_backend: "store_crypto"
+barbican_backend: "vault_plugin"
 barbican_debug_enabled: True
 barbican_deploy_mysql: True
+barbican_deploy_etcd: True
 
 mysql_host: "mysql"
 mysql_user: "root"
 mysql_password: "password"
+
+vault_etcd_address: "etcd0"
+# If used with haproxy, the vault_server_address should be the a routable address
+vault_server_address: "vault-server"
+vault_public_address: "vault-server"
