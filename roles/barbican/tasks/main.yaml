@@ -1,12 +1,38 @@
 ---
 - name: Create target directory
-  file: path={{ ansible_env.HOME }}/barbican state=directory mode=0755
+  file: path={{ item }} state=directory mode=0755
+  with_items:
+    - "{{ ansible_env.HOME }}/barbican"
+    - /var/log/barbican
+    - /var/lib/vault1/config
+    - /var/lib/vault2/config
 
 - name: Copy docker-compose file to remote
   template:
     src: docker-compose.yaml.j2
     dest: "{{ ansible_env.HOME }}/barbican/docker-compose.yaml"
 
+- name: Copy barbican config files to remote
+  template:
+    backup: yes
+    src: etc/barbican/{{ item }}.j2
+    dest: /etc/barbican/{{ item }}
+  with_items:
+    - barbican-api-paste.ini
+    - barbican-uwsgi.ini
+    - barbican.conf
+
+- name: Copy vault config files to remote
+  template:
+    backup: yes
+    src: var/lib/{{ item }}.j2
+    dest: /var/lib/{{ item }}
+  with_items:
+    - vault1/config/config.hcl
+    - vault2/config/config.hcl
+  when: barbican_backend == 'vault_plugin'
+
+# TODO(lingxian): Need to consider the upgrade scenario. Vault service doesn't need to be removed.
 - name: Clear the resources first
   docker_service:
     project_src: "{{ ansible_env.HOME }}/barbican/"
@@ -18,10 +44,16 @@
   docker_service:
     project_src: "{{ ansible_env.HOME }}/barbican/"
 
+- name: Wait for vault unseal and config vault token in barbican config file manually
+  local_action: pause
+  when: barbican_backend == 'vault_plugin'
+  run_once: true
+
 - name: Initialize barbican database
   shell: docker-compose exec -T barbican sh -c 'barbican-manage db upgrade'
   args:
     chdir: "{{ ansible_env.HOME }}/barbican/"
+  run_once: true
 
 - name: Restart barbican service
   shell: docker-compose restart barbican

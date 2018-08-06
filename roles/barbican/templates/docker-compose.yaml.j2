@@ -1,3 +1,4 @@
+#jinja2:lstrip_blocks: True
 version: '3'
 services:
   barbican:
@@ -8,8 +9,15 @@ services:
       - /etc/barbican/:/etc/barbican/
       - /var/log/barbican/:/var/log/barbican/
     depends_on:
+    {% if barbican_deploy_mysql %}
       - mysql
+    {% endif %}
+    {% if barbican_backend == "vault_plugin" %}
+      - vault-server-1
+      - vault-server-2
+    {% endif %}
 
+{% if barbican_deploy_mysql %}
   mysql:
     image: mysql:5.7
     expose:
@@ -17,3 +25,115 @@ services:
     environment:
       MYSQL_ROOT_PASSWORD: {{ mysql_password }}
       MYSQL_DATABASE: barbican
+{% endif %}
+
+{% if barbican_backend == "vault_plugin" %}
+  vault-server-1:
+    image: vault:0.10.4
+    command: server
+    expose:
+      - "8200"
+      - "8201"
+    volumes:
+      - /var/lib/vault1/:/vault/:rw
+    cap_add:
+      - IPC_LOCK
+    labels:
+      release: "0.10.4"
+    depends_on:
+      - etcd0
+      - etcd1
+      - etcd2
+
+  vault-server-2:
+    image: vault:0.10.4
+    command: server
+    expose:
+      - "8200"
+      - "8201"
+    volumes:
+      - /var/lib/vault2/:/vault/:rw
+    cap_add:
+      - IPC_LOCK
+    labels:
+      release: "0.10.4"
+    depends_on:
+      - etcd0
+      - etcd1
+      - etcd2
+
+  etcd0:
+    image: quay.io/coreos/etcd:v3.2.24
+    expose:
+      - 2379
+      - 2380
+    volumes:
+      - etcd0:/etcd_data
+    command:
+      - /usr/local/bin/etcd
+      - -name
+      - etcd0
+      - --data-dir
+      - /etcd_data
+      - -advertise-client-urls
+      - http://etcd0:2379
+      - -listen-client-urls
+      - http://0.0.0.0:2379
+      - -initial-advertise-peer-urls
+      - http://etcd0:2380
+      - -listen-peer-urls
+      - http://0.0.0.0:2380
+      - -initial-cluster
+      - etcd0=http://etcd0:2380,etcd1=http://etcd1:2380,etcd2=http://etcd2:2380
+  etcd1:
+    image: quay.io/coreos/etcd:v3.2.24
+    expose:
+      - 2379
+      - 2380
+    volumes:
+      - etcd1:/etcd_data
+    command:
+      - /usr/local/bin/etcd
+      - -name
+      - etcd1
+      - --data-dir
+      - /etcd_data
+      - -advertise-client-urls
+      - http://etcd1:2379
+      - -listen-client-urls
+      - http://0.0.0.0:2379
+      - -initial-advertise-peer-urls
+      - http://etcd1:2380
+      - -listen-peer-urls
+      - http://0.0.0.0:2380
+      - -initial-cluster
+      - etcd0=http://etcd0:2380,etcd1=http://etcd1:2380,etcd2=http://etcd2:2380
+  etcd2:
+    image: quay.io/coreos/etcd:v3.2.24
+    expose:
+      - 2379
+      - 2380
+    volumes:
+      - etcd2:/etcd_data
+    command:
+      - /usr/local/bin/etcd
+      - -name
+      - etcd2
+      - --data-dir
+      - /etcd_data
+      - -advertise-client-urls
+      - http://etcd2:2379
+      - -listen-client-urls
+      - http://0.0.0.0:2379
+      - -initial-advertise-peer-urls
+      - http://etcd2:2380
+      - -listen-peer-urls
+      - http://0.0.0.0:2380
+      - -initial-cluster
+      - etcd0=http://etcd0:2380,etcd1=http://etcd1:2380,etcd2=http://etcd2:2380
+
+volumes:
+  etcd0:
+  etcd1:
+  etcd2:
+{% endif %}
